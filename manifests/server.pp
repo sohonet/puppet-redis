@@ -207,10 +207,6 @@ define redis::server (
     }
     'Ubuntu': {
       $service_file = "/etc/systemd/system/redis-server_${redis_name}.service"
-      if versioncmp($::operatingsystemmajrelease, '14.04') > 0 { $has_systemd = true }
-    }
-    'Ubuntu': {
-      $service_file = "/etc/systemd/system/redis-server_${redis_name}.service"
       if versioncmp($::operatingsystemmajrelease, '16.04') > 0 { $has_systemd = true }
     }
     default:  {
