@@ -425,6 +425,7 @@ auto-aof-rewrite-min-size <%= @aof_rewrite_minsize %>
 #lua-time-limit 5000
 
 <% if @redis_with_cluster_support -%>
+<% if @cluster_enabled -%>
 ################################ REDIS CLUSTER  ###############################
 #
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -438,7 +439,7 @@ auto-aof-rewrite-min-size <%= @aof_rewrite_minsize %>
 # cluster node enable the cluster support uncommenting the following:
 #
 # cluster-enabled yes
-<% if @cluster_enabled -%>cluster-enabled yes<% end -%>
+cluster-enabled yes
 
 # Every cluster node has a cluster configuration file. This file is not
 # intended to be edited by hand. It is created and updated by Redis nodes.
@@ -547,6 +548,7 @@ cluster-require-full-coverage no
 # In order to setup your cluster make sure to read the documentation
 # available at http://redis.io web site.
 
+<% end -%>
 <% end -%>
 ################################## SLOW LOG ###################################
 
