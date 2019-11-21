@@ -234,7 +234,7 @@ define redis::server (
     # We don't want the system to attempt start/reload the default service provided
     # by the package as this will fail in cases were a instance of redis server is
     # configured using this module as default configuration unmanaged.
-    exec { 'systemd_disable_default_service':
+    exec { "systemd_${redis_name}_disable_default_service":
       command   => '/bin/systemctl disable redis-server.service',
       onlyif    => '/bin/systemctl is-enabled redis-server.service',
       logoutput => on_failure,
