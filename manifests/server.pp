@@ -203,12 +203,12 @@ define redis::server (
     }
     'Debian': {
       if versioncmp($::operatingsystemmajrelease, '8') >= 0 { 
-			  $has_systemd = true 
-				$service_file = "/etc/systemd/system/redis-server_${redis_name}.service"
-			} else {
-				$service_file = "/etc/init.d/redis-server_${redis_name}"
-			  $has_systemd = false
-			}
+        $has_systemd = true
+        $service_file = "/etc/systemd/system/redis-server_${redis_name}.service"
+      } else {
+        $service_file = "/etc/init.d/redis-server_${redis_name}"
+        $has_systemd = false
+      }
     }
     'Ubuntu': {
       if versioncmp($::operatingsystemmajrelease, '16.04') >= 0 {
@@ -230,6 +230,14 @@ define redis::server (
       command     => "/bin/systemctl preset redis-server_${redis_name}.service",
       notify      => Service["redis-server_${redis_name}"],
       refreshonly => true,
+    }
+    # We don't want the system to attempt start/reload the default service provided
+    # by the package as this will fail in cases were a instance of redis server is
+    # configured using this module as default configuration unmanaged.
+    exec { 'systemd_disable_default_service':
+      command   => '/bin/systemctl disable redis-server.service',
+      onlyif    => '/bin/systemctl is-enabled redis-server.service',
+      logoutput => on_failure,
     }
 
     file { $service_file:
