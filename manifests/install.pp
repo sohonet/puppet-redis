@@ -24,29 +24,29 @@
 #   Url where to find the source tar.gz. Default value is 'http://download.redis.io/releases'
 #
 class redis::install (
-  $redis_version     = $::redis::params::redis_version,
-  $redis_build_dir   = $::redis::params::redis_build_dir,
-  $redis_install_dir = $::redis::params::redis_install_dir,
-  $redis_package     = $::redis::params::redis_install_package,
-  $download_tool     = $::redis::params::download_tool,
-  $redis_user        = $::redis::params::redis_user,
-  $redis_group       = $::redis::params::redis_group,
-  $download_base     = $::redis::params::download_base,) inherits redis {
+  $redis_version     = $redis::params::redis_version,
+  $redis_build_dir   = $redis::params::redis_build_dir,
+  $redis_install_dir = $redis::params::redis_install_dir,
+  $redis_package     = $redis::params::redis_install_package,
+  $download_tool     = $redis::params::download_tool,
+  $redis_user        = $redis::params::redis_user,
+  $redis_group       = $redis::params::redis_group,
+  $download_base     = $redis::params::download_base,) inherits redis {
   if ($redis_package == true) {
-    case $::operatingsystem {
+    case $facts['os']['name'] {
       'Debian', 'Ubuntu' : {
         package { 'redis-server': ensure => $redis_version, }
 
         service { 'redis-server':
           ensure    => stopped,
-          subscribe => Package['redis-server']
+          subscribe => Package['redis-server'],
         }
       }
       'Fedora', 'RedHat', 'CentOS', 'OEL', 'OracleLinux', 'Amazon', 'Scientific', 'SLES' : {
         package { 'redis': ensure => $redis_version, }
 
         # The SLES DatabaseServer repository installs a conflicting logrotation configuration
-        if $::operatingsystem == 'SLES' {
+        if $facts['os']['name'] == 'SLES' {
           file { '/etc/logrotate.d/redis':
             ensure    => 'absent',
             subscribe => Package['redis'],
@@ -62,7 +62,7 @@ class redis::install (
     }
   } else {
     # install necessary packages for build.
-    case $::operatingsystem {
+    case $facts['os']['name'] {
       'Debian', 'Ubuntu' : {
         ensure_packages(['build-essential'])
         Package['build-essential'] -> Anchor['redis::prepare_build']
@@ -87,7 +87,7 @@ class redis::install (
       cwd     => '/',
       user    => 'root',
       group   => 'root',
-      before  => File[$redis_build_dir]
+      before  => File[$redis_build_dir],
     }
 
     file { $redis_build_dir: ensure => directory, }
@@ -98,7 +98,7 @@ class redis::install (
       require => File[$redis_build_dir],
       before  => Anchor['redis::prepare_build'],
       command => "${download_tool} ${redis_download_url} | tar xz",
-      creates => "${redis_build_dir}/redis-${::redis::install::redis_version}",
+      creates => "${redis_build_dir}/redis-${redis::install::redis_version}",
       path    => ['/usr/bin', '/usr/sbin', '/bin', '/sbin'],
       cwd     => $redis_build_dir,
       user    => 'root',
@@ -111,7 +111,7 @@ class redis::install (
     exec { 'redis::compile':
       command => 'make',
       creates => "${redis_build_dir}/redis-${redis_version}/src/redis-server",
-      cwd     => "${redis_build_dir}/redis-${::redis::install::redis_version}/",
+      cwd     => "${redis_build_dir}/redis-${redis::install::redis_version}/",
       path    => ['/usr/bin', '/usr/sbin', '/bin', '/sbin'],
       user    => 'root',
       group   => 'root',
@@ -119,8 +119,8 @@ class redis::install (
 
     file { "${redis_build_dir}/redis":
       ensure  => link,
-      target  => "${redis_build_dir}/redis-${::redis::install::redis_version}/src/",
-      require => Exec['redis::compile']
+      target  => "${redis_build_dir}/redis-${redis::install::redis_version}/src/",
+      require => Exec['redis::compile'],
     }
 
     anchor { 'redis::install': require => File["${redis_build_dir}/redis"], }
@@ -134,7 +134,7 @@ class redis::install (
           'redis-check-dump',
           'redis-cli',
           'redis-sentinel',
-          'redis-server']
+        'redis-server']
       }
       default             : {
         $redis_binaries = [
@@ -143,7 +143,7 @@ class redis::install (
           'redis-check-rdb',
           'redis-cli',
           'redis-sentinel',
-          'redis-server']
+        'redis-server']
       }
     }
 

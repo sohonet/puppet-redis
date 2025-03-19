@@ -68,14 +68,14 @@ define redis::sentinel (
 # auth-pass => 'secret_Password',
 # notification-script => '/var/redis/notify.sh',
 # client-reconfig-script => '/var/redis/reconfig.sh',
-    }
+    },
   },
   $running          = true,
   $enabled          = true,
   $manage_logrotate = true,
 ) {
-  $sentinel_user              = $::redis::install::redis_user
-  $sentinel_group             = $::redis::install::redis_group
+  $sentinel_user              = $redis::install::redis_user
+  $sentinel_group             = $redis::install::redis_group
 
   # validate parameters
   validate_absolute_path($sentinel_log_dir)
@@ -87,11 +87,11 @@ define redis::sentinel (
   validate_bool($manage_logrotate)
 
   if $protected_mode {
-    validate_re($protected_mode,['^no$', '^yes$'])
+    validate_re($protected_mode, ['^no$', '^yes$'])
   }
 
-  $redis_install_dir = $::redis::install::redis_install_dir
-  $sentinel_init_script = $::operatingsystem ? {
+  $redis_install_dir = $redis::install::redis_install_dir
+  $sentinel_init_script = $facts['os']['name'] ? {
     /(Debian|Ubuntu)/                                          => 'redis/etc/init.d/debian_redis-sentinel.erb',
     /(Fedora|RedHat|CentOS|OEL|OracleLinux|Amazon|Scientific)/ => 'redis/etc/init.d/redhat_redis-sentinel.erb',
     /(Gentoo)/                                                 => 'redis/etc/init.d/gentoo_redis-sentinel.erb',
@@ -102,13 +102,13 @@ define redis::sentinel (
   $conf_file_name = "redis-sentinel_${sentinel_name}.conf"
   $conf_file = "/etc/${conf_file_name}"
   file { $conf_file:
-      ensure  => file,
-      content => template('redis/etc/sentinel.conf.erb'),
-      require => Class['redis::install'];
+    ensure  => file,
+    content => template('redis/etc/sentinel.conf.erb'),
+    require => Class['redis::install'];
   }
 
   # startup script
-  if ($::osfamily == 'RedHat' and versioncmp($::operatingsystemmajrelease, '7') >=0 and $::operatingsystem != 'Amazon') {
+  if ($facts['os']['family'] == 'RedHat' and versioncmp($facts['os']['release']['major'], '7') >=0 and $facts['os']['name'] != 'Amazon') {
     $service_file = "/usr/lib/systemd/system/redis-sentinel_${sentinel_name}.service"
     exec { "systemd_service_sentinel_${sentinel_name}_preset":
       command     => "/bin/systemctl preset redis-sentinel_${sentinel_name}.service",
@@ -143,7 +143,7 @@ define redis::sentinel (
     subscribe  => File[$conf_file],
   }
 
-  if ($manage_logrotate == true){
+  if ($manage_logrotate == true) {
     # install and configure logrotate
     if ! defined(Package['logrotate']) {
       package { 'logrotate': ensure => installed; }
@@ -155,7 +155,7 @@ define redis::sentinel (
       require => [
         Package['logrotate'],
         File["/etc/redis-sentinel_${sentinel_name}.conf"],
-      ]
+      ],
     }
   }
 }

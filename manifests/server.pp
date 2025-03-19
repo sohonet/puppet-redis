@@ -172,19 +172,19 @@ define redis::server (
   $protected_mode                = undef,
   $include                       = [],
 ) {
-  $redis_user              = $::redis::install::redis_user
-  $redis_group             = $::redis::install::redis_group
+  $redis_user              = $redis::install::redis_user
+  $redis_group             = $redis::install::redis_group
 
-  $redis_install_dir = $::redis::install::redis_install_dir
-  $redis_init_script = $::operatingsystem ? {
+  $redis_install_dir = $redis::install::redis_install_dir
+  $redis_init_script = $facts['os']['name'] ? {
     /(Debian|Ubuntu)/                                          => 'redis/etc/init.d/debian_redis-server.erb',
     /(Fedora|RedHat|CentOS|OEL|OracleLinux|Amazon|Scientific)/ => 'redis/etc/init.d/redhat_redis-server.erb',
     /(SLES)/                                                   => 'redis/etc/init.d/sles_redis-server.erb',
     /(Gentoo)/                                                 => 'redis/etc/init.d/gentoo_redis-server.erb',
     default                                                    => undef,
   }
-  $redis_2_6_or_greater = versioncmp($::redis::install::redis_version,'2.6') >= 0
-  $redis_with_cluster_support = versioncmp($::redis::install::redis_version,'3.0') >= 0
+  $redis_2_6_or_greater = versioncmp($redis::install::redis_version,'2.6') >= 0
+  $redis_with_cluster_support = versioncmp($redis::install::redis_version,'3.0') >= 0
 
   # redis conf file
   $conf_file_name = "redis_${redis_name}.conf"
@@ -196,22 +196,22 @@ define redis::server (
   }
 
   # startup script
-  case $::operatingsystem {
+  case $facts['os']['name'] {
     'Fedora', 'RedHat', 'CentOS', 'OEL', 'OracleLinux', 'Amazon', 'Scientific': {
       $service_file = "/usr/lib/systemd/system/redis-server_${redis_name}.service"
-      if versioncmp($::operatingsystemmajrelease, '7') > 0 { $has_systemd = true }
+      if versioncmp($facts['os']['release']['major'], '7') > 0 { $has_systemd = true }
     }
     'Debian': {
       $service_file = "/etc/systemd/system/redis-server_${redis_name}.service"
-      if versioncmp($::operatingsystemmajrelease, '8') > 0 { $has_systemd = true }
+      if versioncmp($facts['os']['release']['major'], '8') > 0 { $has_systemd = true }
     }
     'Ubuntu': {
       $service_file = "/etc/systemd/system/redis-server_${redis_name}.service"
-      if versioncmp($::operatingsystemmajrelease, '14.04') > 0 { $has_systemd = true }
+      if versioncmp($facts['os']['release']['major'], '14.04') > 0 { $has_systemd = true }
     }
     'Ubuntu': {
       $service_file = "/etc/systemd/system/redis-server_${redis_name}.service"
-      if versioncmp($::operatingsystemmajrelease, '16.04') > 0 { $has_systemd = true }
+      if versioncmp($facts['os']['release']['major'], '16.04') > 0 { $has_systemd = true }
     }
     default:  {
       $service_file = "/etc/init.d/redis-server_${redis_name}"
@@ -267,7 +267,7 @@ define redis::server (
     group   => $redis_group,
   }
 
-  if ($manage_logrotate == true){
+  if ($manage_logrotate == true) {
     # install and configure logrotate
     if ! defined(Package['logrotate']) {
       package { 'logrotate': ensure => installed; }
@@ -279,7 +279,7 @@ define redis::server (
       require => [
         Package['logrotate'],
         File[$conf_file],
-      ]
+      ],
     }
   }
 
